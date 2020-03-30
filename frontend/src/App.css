@@ -1,0 +1,31 @@
+/*são os estilos globais da aplicação por ser o arquivo que é
+chamado no componente principal da aplicação que é o app.js*/
+
+* {
+  margin: 0;
+  padding: 0;
+  outline: 0;
+  box-sizing: border-box; /* pra que o padding e 
+  a margin não ultrapassem a largura e altura dele*/
+}
+
+html,
+body,
+#root {
+  height: 100%; /* por padrão nenhuma tag do html ocupa 100%
+  a altura, com height 100% força a aplicação tenha 100%
+  do tamanho da tela*/
+}
+
+body {
+  background: #f5f5f5; /* define a cor*/
+}
+
+/* por padrão o button e o input 
+não herdam a fonte do corpo do html*/
+body,
+input,
+button {
+  font-family: Arial, Helvetica, sans-serif; /* define a fonte
+  utilizada, caso não possua Arial, será utilizado helvetica...*/
+}
