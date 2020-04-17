@@ -5,6 +5,7 @@ const Dev = require("../models/Dev");
 module.exports = {
   //metodo para criação de um novo like no bd
   async store(req, res) {
+    console.log(req.io, req.connectedUsers);
     //pra acessar um parametro que vem atraves da rota usa-se o req.params
     // console.log(req.params.devId);
 
@@ -22,7 +23,15 @@ module.exports = {
     }
 
     if (targetDev.likes.includes(loggedDev._id)) {
-      console.log("DEU MATCH");
+      const loggedSocket = req.connectedUsers[user];
+      const targetSocket = req.connectedUsers[devId];
+
+      if (loggedSocket) {
+        req.io.to(loggedSocket).emit("match", targetDev);
+      }
+      if (targetSocket) {
+        req.io.to(targetSocket).emit("match", loggedDev);
+      }
     }
     //Isso não adiciona no banco de dados
     loggedDev.likes.push(targetDev._id); //adiciona o ID do targetdev que recebeu o like no array de likes do DEV
@@ -31,5 +40,5 @@ module.exports = {
     await loggedDev.save();
 
     return res.json(loggedDev);
-  }
+  },
 };

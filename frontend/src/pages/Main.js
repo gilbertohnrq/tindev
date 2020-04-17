@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+import io from "socket.io-client";
+
 //importa o link  do react-router-dom que cria um link que pode ser usado para criar um link para pagina inicial por ex utilizado la na logo
 import { Link } from "react-router-dom";
 
@@ -11,6 +13,7 @@ import api from "../services/api";
 import logo from "../assets/logo.svg";
 import dislike from "../assets/dislike.svg";
 import like from "../assets/like.svg";
+import itsamatch from "../assets/itsamatch.png";
 
 //o react-router-dom permite a utilização de uma propriedade chamada match
 //a  propriedade match guarda todos os parametros que foram passados dentro pra essa rota
@@ -18,6 +21,7 @@ export default function Main({ match }) {
   //o estado é utilizado sempre que precisamos de uma  variavel que vai ser manipualada pelo componente
   //assim o componente vai poder acessar os valores/altera-los
   const [users, setUsers] = useState([]); //incializamos como um array pq ela vai armazenar vários usuários e não somente um
+  const [matchDev, setMatchDev] = useState(null);
 
   //useEffect utilizado para executar a função toda vez que o id do usuário for alterado
   //vai fazer chamada api sempre que o componente for exibido em tela
@@ -39,8 +43,8 @@ export default function Main({ match }) {
       //dentro do get  passamos a rota que é /devs e depois dentro dos parametros passando um objeto {headers:} e dentro dos headers:{user} que é o user logado e depois user: match.params.id que é a informação que queremos do user
       const response = await api.get("/devs", {
         headers: {
-          user: match.params.id
-        }
+          user: match.params.id,
+        },
       });
       setUsers(response.data); //chama a função setUsers para preencher a variavel users com o response.data
       //automaticamente quando se muda o valor de um estado no react ele faz uma nova renderização, fazendo toda a renderização do html do 0, por isso ele consegue identificar as alterações feitas dentro da variavel users
@@ -48,14 +52,23 @@ export default function Main({ match }) {
     loadUsers();
   }, [match.params.id]);
 
+  useEffect(() => {
+    const socket = io("http://localhost:3333", {
+      query: { user: match.params.id },
+    });
+    socket.on("match", (dev) => {
+      setMatchDev(dev);
+    });
+  }, [match.params.id]);
+
   //toda ação que é gerada a partir de uma interação do usuário, é legal padronizar com o handle antes do nome da função
   //função para o botão de like
   async function handleLike(id) {
     //essa função precisa receber o id do usuário que tá recebendo o like pq o id do usuário que tá dando like já temos atraves do match.params.id que está na nossa rota
     await api.post(`/devs/${id}/likes`, null, {
-      headers: { user: match.params.id }
+      headers: { user: match.params.id },
     });
-    setUsers(users.filter(user => user._id !== id));
+    setUsers(users.filter((user) => user._id !== id));
   }
   //função para o botão de dislike
   //essa função precisa receber o id do usuário que tá recebendo o like pq o id do usuário que tá dando like já temos atraves do match.params.id que está na nossa rota
@@ -63,11 +76,11 @@ export default function Main({ match }) {
     //quando um usuário dá dislike em outro, precisamos chamar a rota da api de dislike
     //por ser um metodo post precisamos passar o segundo parametro como null por se tratar do corpo da requisição (body) e no terceiro parametro passamos o header que contém a informação do usuário que está dando o dislike
     await api.post(`/devs/${id}/dislikes`, null, {
-      headers: { user: match.params.id }
+      headers: { user: match.params.id },
     });
     //setUsers é utilizado aqui para renderizar novamente a pagina
     //para remover o usuário que demos dislike, criamos um filtro pra pegar somente os usuarios que o _id seja diferente do id que recebemos dentro do handledislike
-    setUsers(users.filter(user => user._id !== id));
+    setUsers(users.filter((user) => user._id !== id));
   }
   return (
     //nos botoes de dislike e like, teremos que adicionar a propriedade onClick que serve pra realizar uma ação quando o usuário clica no botão
@@ -78,7 +91,7 @@ export default function Main({ match }) {
       </Link>
       {users.length > 0 ? (
         <ul>
-          {users.map(user => (
+          {users.map((user) => (
             <li key={user._id}>
               <img src={user.avatar} alt={user.name} />
               <footer>
@@ -99,6 +112,18 @@ export default function Main({ match }) {
         </ul>
       ) : (
         <div className="empty">Acabou :(</div>
+      )}
+
+      {matchDev && (
+        <div className="match-container">
+          <img src={itsamatch} alt="It's a match" />
+          <img className="avatar" src={matchDev.avatar} alt="" />
+          <strong>{matchDev.name}</strong>
+          <p>{matchDev.bio}</p>
+          <button type="button" onClick={() => setMatchDev(null)}>
+            FECHAR
+          </button>
+        </div>
       )}
     </div>
   );

@@ -12,7 +12,19 @@ const cors = require("cors");
 const routes = require("./routes");
 
 //inicia um servidor do express
-const server = express();
+const app = express();
+
+const server = require("http").Server(app);
+
+//importa o socket io
+const io = require("socket.io")(server);
+
+const connectedUsers = {};
+
+io.on("connection", (socket) => {
+  const { user } = socket.handshake.query;
+  connectedUsers[user] = socket.id;
+});
 
 //Faz a conexão com o banco de dados utilizando a String de conexão do mongodb
 //Lembrar de trocar o username o  password sem o <>
@@ -23,14 +35,21 @@ mongoose.connect(
   { useNewUrlParser: true, useUnifiedTopology: true }
 );
 
+app.use((req, res, next) => {
+  req.io = io;
+  req.connectedUsers = connectedUsers;
+
+  return next();
+});
+
 //usa a função importada do cors pro REACT poder fazer requisições ao servidor
-server.use(cors());
+app.use(cors());
 
 //Faz o express "entender" requisições em json
-server.use(express.json());
+app.use(express.json());
 
 //.use => chama o arquivo de configurações criado
-server.use(routes);
+app.use(routes);
 
 //faz o servidor "ouvir" uma porta por ex: 3333
 //http://localhost:3333
